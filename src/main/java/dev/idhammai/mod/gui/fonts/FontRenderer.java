@@ -82,7 +82,8 @@ implements Closeable {
             this.put('F', 0xFFFFFF);
         }
     };
-    private static final ExecutorService ASYNC_WORKER = Executors.newCachedThreadPool();
+    // limit the number of asynchronous workers to CPU cores
+    private static final ExecutorService ASYNC_WORKER = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private final Object2ObjectMap<Identifier, ObjectList<DrawEntry>> GLYPH_PAGE_CACHE = new Object2ObjectOpenHashMap<>();
     private final float originalSize;
     private final ObjectList<GlyphMap> maps = new ObjectArrayList();

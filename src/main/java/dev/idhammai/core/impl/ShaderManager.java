@@ -271,11 +271,20 @@ implements Wrapper {
         });
     }
 
+    // keep track of the last time we attempted to reload shaders so we don't spam the GPU
+    private static long lastReloadAttempt = 0L;
+
     public boolean fullNullCheck() {
         if (GRADIENT == null || SMOKE == null || DEFAULT == null || FLOW == null || RAINBOW == null || PULSE == null || PULSE_OUTLINE == null || GRADIENT_OUTLINE == null || SMOKE_OUTLINE == null || DEFAULT_OUTLINE == null || FLOW_OUTLINE == null || RAINBOW_OUTLINE == null || this.shaderBuffer == null) {
             if (mc.getFramebuffer() == null) {
                 return true;
             }
+            long now = System.currentTimeMillis();
+            // if we tried less than 5 seconds ago, skip to avoid reload storm
+            if (now - lastReloadAttempt < 5000L) {
+                return true;
+            }
+            lastReloadAttempt = now;
             this.shaderBuffer = new MyFramebuffer(ShaderManager.mc.getFramebuffer().textureWidth, ShaderManager.mc.getFramebuffer().textureHeight);
             this.reloadShaders();
             return true;

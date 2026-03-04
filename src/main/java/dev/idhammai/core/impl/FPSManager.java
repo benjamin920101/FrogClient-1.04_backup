@@ -3,19 +3,23 @@
  */
 package dev.idhammai.core.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class FPSManager {
-    private final List<Long> records = new ArrayList<Long>();
+    // timestamps are monotonic so a deque works well for O(1) pruning from head
+    private final Deque<Long> records = new ArrayDeque<>();
 
     public void record() {
-        this.records.add(System.currentTimeMillis());
+        records.addLast(System.currentTimeMillis());
     }
 
     public int getFps() {
-        this.records.removeIf(aLong -> aLong + 1000L < System.currentTimeMillis());
-        return this.records.size();
+        long now = System.currentTimeMillis();
+        while (!records.isEmpty() && records.peekFirst() + 1000L < now) {
+            records.pollFirst();
+        }
+        return records.size();
     }
 }
 

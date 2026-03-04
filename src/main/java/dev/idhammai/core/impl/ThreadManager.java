@@ -34,7 +34,8 @@ import net.minecraft.util.math.BlockPos;
 
 public class ThreadManager
 implements Wrapper {
-    public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    // use a bounded pool to avoid unbounded thread creation
+    public static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     public static ClientService clientService;
     public volatile Iterable<Entity> threadSafeEntityList = Collections.emptyList();
     public volatile List<AbstractClientPlayerEntity> threadSafePlayersList = Collections.emptyList();
@@ -97,22 +98,40 @@ implements Wrapper {
     extends Thread {
         @Override
         public void run() {
+            long lastErrorTime = 0L;
             while (true) {
                 try {
-                    while (true) {
-                        if (ThreadManager.this.tickRunning) {
-                            Thread.onSpinWait();
-                            continue;
-                        }
+                    if (ThreadManager.this.tickRunning) {
+                        // when waiting for a tick, yield a bit instead of spinning
+                        Thread.sleep(5);
+                    } else {
                         AutoCrystal.INSTANCE.onThread();
                         HoleESP.INSTANCE.onThread();
                         AutoAnchor.INSTANCE.onThread();
+                        // small pause between iterations to avoid busy loop
+                        Thread.sleep(10);
                     }
-                }
-                catch (Exception e) {
+                } catch (InterruptedException ie) {
+                    // propagate interruption, exit thread
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception e) {
                     e.printStackTrace();
                     if (ClientSetting.INSTANCE.debug.getValue()) {
                         CommandManager.sendMessage("\u00a74An error has occurred [Thread] Message: [" + e.getMessage() + "]");
+                    }
+                    // cooldown before retrying after an error
+                    try {
+                        long now = System.currentTimeMillis();
+                        if (now - lastErrorTime < 50L) {
+                            Thread.sleep(50L - (now - lastErrorTime));
+                        } else {
+                            Thread.sleep(50L);
+                        }
+                        lastErrorTime = System.currentTimeMillis();
+                    } catch (InterruptedException ie2) {
+                        Thread.currentThread().interrupt();
+                        return;
                     }
                 }
             }
