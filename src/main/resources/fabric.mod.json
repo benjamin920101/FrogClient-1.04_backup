@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "frog",
+  "version": "${version}",
+  "name": "Frog Client",
+  "description": "Frog Client (\u9752\u86d9\u7aef)",
+  "authors": [
+    "IDhammaI"
+  ],
+  "accessWidener": "frog.accesswidener",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.idhammai.Frog"
+    ]
+  },
+  "mixins": [
+    "frog.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.21.1",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
